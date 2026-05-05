@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A technician/shop in the Prime Salvage platform",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "shopName": { "type": "string" },
+        "verifiedTech": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "shopName", "verifiedTech", "createdAt"]
+    },
+    "Component": {
+      "title": "Component",
+      "description": "A salvaged hardware component",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "partName": { "type": "string" },
+        "compatibility": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "price": { "type": "number" },
+        "condition": { "type": "string" },
+        "status": { "type": "string", "enum": ["AVAILABLE", "SOLD"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["sellerId", "sellerName", "partName", "compatibility", "serialNumber", "price", "condition", "status", "createdAt", "updatedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A purchase request or completed transaction",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "componentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "COMPLETED", "REJECTED"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["buyerId", "sellerId", "componentId", "amount", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "User" },
+      "description": "Platform users/technicians"
+    },
+    "/components/{componentId}": {
+      "schema": { "$ref": "Component" },
+      "description": "Available salvaged components"
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "Transaction" },
+      "description": "Component transactions and requests"
+    }
+  }
+}

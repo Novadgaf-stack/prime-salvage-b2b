@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Definitions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+
+    // User Model
+    function isValidUser(data) {
+      return data.keys().hasAll(["uid", "email", "shopName", "verifiedTech", "createdAt"]) &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.shopName is string && data.shopName.size() <= 256 &&
+             data.verifiedTech is bool &&
+             data.createdAt is string;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().verifiedTech == existing().verifiedTech;
+      allow delete: if false;
+    }
+
+    // Component Model
+    function isValidComponent(data) {
+      return data.keys().hasAll(["sellerId", "sellerName", "partName", "compatibility", "serialNumber", "price", "condition", "status", "createdAt", "updatedAt"]) &&
+             data.sellerId is string && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() <= 256 &&
+             data.partName is string && data.partName.size() <= 256 &&
+             data.compatibility is string && data.compatibility.size() <= 256 &&
+             data.serialNumber is string && data.serialNumber.size() <= 256 &&
+             data.price is number &&
+             data.condition is string && data.condition.size() <= 128 &&
+             data.status is string && (data.status == "AVAILABLE" || data.status == "SOLD") &&
+             data.createdAt is string &&
+             data.updatedAt is string;
+    }
+
+    match /components/{componentId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn() && isValidComponent(incoming()) && incoming().sellerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidComponent(incoming()) && incoming().sellerId == existing().sellerId;
+      allow delete: if false;
+    }
+
+    // Transaction Model
+    function isValidTransaction(data) {
+      return data.keys().hasAll(["buyerId", "sellerId", "componentId", "amount", "status", "createdAt", "updatedAt"]) &&
+             data.buyerId is string && data.buyerId.size() <= 128 &&
+             data.sellerId is string && data.sellerId.size() <= 128 &&
+             data.componentId is string && data.componentId.size() <= 128 &&
+             data.amount is number &&
+             data.status is string && (data.status == "PENDING" || data.status == "APPROVED" || data.status == "COMPLETED" || data.status == "REJECTED") &&
+             data.createdAt is string &&
+             data.updatedAt is string;
+    }
+
+    match /transactions/{transactionId} {
+      allow get: if isSignedIn() && (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidTransaction(incoming()) && incoming().buyerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidTransaction(incoming()) && (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid);
+      allow delete: if false;
+    }
+  }
+}
