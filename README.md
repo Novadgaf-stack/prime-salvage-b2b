@@ -22,4 +22,4 @@ A high-performance B2B platform engineered for the salvage and parts industry. B
 4. Start the development server: `npm run dev`
 
 ---
-*Developed by Inem Philip U. | Founder of Prime Assets*
+*Developed by Akinkunmi Isaac D*
